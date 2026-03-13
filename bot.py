@@ -1,14 +1,11 @@
 import os
-<<<<<<< HEAD
 import re
 import hashlib
+from datetime import datetime
 from email.utils import parsedate_to_datetime
 
 import feedparser
 import requests
-=======
-import feedparser
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
 from dotenv import load_dotenv
 from notion_client import Client
 
@@ -25,42 +22,26 @@ if not DATABASE_ID:
 
 notion = Client(auth=NOTION_TOKEN)
 
-<<<<<<< HEAD
 NOTION_VERSION = "2022-06-28"
 NOTION_API_BASE = "https://api.notion.com/v1"
 
-=======
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
 feeds = [
     {"source": "Zenn", "url": "https://zenn.dev/feed"},
     {"source": "Qiita", "url": "https://qiita.com/tags/AI/feed"},
 ]
 
-<<<<<<< HEAD
 ai_keywords = [
-=======
-# AI関連キーワード
-ai_keywords = [
-    "ai",
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
     "chatgpt",
     "claude",
     "生成ai",
     "ai活用",
     "aiの使い方",
-<<<<<<< HEAD
     "プロンプト",
     "claude code",
     "copilot",
     "gemini",
 ]
 
-=======
-    "プロンプト"
-]
-
-# 初学者向けキーワード
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
 beginner_keywords = [
     "初心者",
     "入門",
@@ -69,21 +50,17 @@ beginner_keywords = [
     "やさしく",
     "わかりやすく",
     "使い方",
-<<<<<<< HEAD
     "始め方",
 ]
 
 exclude_keywords = [
     "論文",
     "ベンチマーク",
-=======
-    "始め方"
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
 ]
+
 
 def contains_any_keyword(text: str, keywords: list[str]) -> bool:
     text_lower = text.lower()
-<<<<<<< HEAD
 
     for keyword in keywords:
         kw = keyword.lower()
@@ -115,20 +92,10 @@ def is_target_article(title: str) -> bool:
 
     return True
 
-=======
-    return any(k.lower() in text_lower for k in keywords)
-
-def is_beginner_ai_article(title: str) -> bool:
-    return (
-        contains_any_keyword(title, ai_keywords)
-        and contains_any_keyword(title, beginner_keywords)
-    )
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
 
 def get_priority(title: str) -> str:
     title_lower = title.lower()
 
-<<<<<<< HEAD
     if contains_any_keyword(title, beginner_keywords):
         return "High"
 
@@ -136,20 +103,10 @@ def get_priority(title: str) -> str:
         return "Medium"
 
     if "生成ai" in title_lower or "プロンプト" in title_lower:
-=======
-    if "初心者" in title or "入門" in title or "はじめて" in title:
-        return "High"
-
-    if "使い方" in title or "基礎" in title or "わかりやすく" in title:
-        return "High"
-
-    if "ai活用" in title_lower or "生成ai" in title_lower:
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
         return "Medium"
 
     return "Low"
 
-<<<<<<< HEAD
 
 def get_score(title: str) -> int:
     score = 1
@@ -219,134 +176,35 @@ def already_exists(unique_key: str) -> bool:
     return len(data.get("results", [])) > 0
 
 
-def format_published_date(published: str) -> str | None:
-    if not published:
-        return None
+def get_entry_date(entry) -> str:
+    if getattr(entry, "published_parsed", None):
+        dt = datetime(*entry.published_parsed[:6])
+        return dt.date().isoformat()
 
-    try:
-        dt = parsedate_to_datetime(published)
-        return dt.date().isoformat()  # YYYY-MM-DD
-    except Exception:
-        return None
+    if getattr(entry, "updated_parsed", None):
+        dt = datetime(*entry.updated_parsed[:6])
+        return dt.date().isoformat()
 
+    raw = getattr(entry, "published", "") or getattr(entry, "updated", "")
+    if raw:
+        try:
+            dt = parsedate_to_datetime(raw)
+            return dt.date().isoformat()
+        except Exception:
+            return ""
 
-def clean_summary(summary: str) -> str:
-    if not summary:
-        return ""
-
-    summary = re.sub(r"<[^>]+>", "", summary)
-    summary = re.sub(r"\s+", " ", summary).strip()
-    return summary[:2000]
+    return ""
 
 
 def add_article(source: str, title: str, link: str, published: str, summary: str):
+
     priority = get_priority(title)
     score = get_score(title)
     unique_key = make_unique_key(source, title, link)
-    published_date = format_published_date(published)
-    clean_text = clean_summary(summary)
 
     if already_exists(unique_key):
         print(f"重複スキップ: {title}")
         return
-
-    properties = {
-        "Name": {
-            "title": [
-                {
-                    "text": {
-                        "content": title[:2000]
-                    }
-                }
-            ]
-        },
-        "Source": {
-            "select": {
-                "name": source
-            }
-        },
-        "Link": {
-            "url": link
-        },
-        "Status": {
-            "select": {
-                "name": "未読"
-            }
-        },
-        "Priority": {
-            "select": {
-                "name": priority
-            }
-        },
-        "Score": {
-            "number": score
-        },
-        "UniqueKey": {
-            "rich_text": [
-                {
-                    "text": {
-                        "content": unique_key
-                    }
-                }
-            ]
-        },
-        "Summary": {
-            "rich_text": [
-                {
-                    "text": {
-                        "content": clean_text
-                    }
-                }
-            ]
-        },
-    }
-
-    if published_date:
-        properties["PublishedDate"] = {
-            "date": {
-                "start": published_date
-            }
-        }
-
-    notion.pages.create(
-        parent={"database_id": DATABASE_ID},
-        properties=properties
-    )
-
-    print(f"追加: {title}")
-
-
-for feed_info in feeds:
-    print(f"\n取得中: {feed_info['source']} / {feed_info['url']}")
-    feed = feedparser.parse(feed_info["url"])
-
-    for entry in feed.entries[:20]:
-        title = getattr(entry, "title", "").strip()
-        link = getattr(entry, "link", "").strip()
-        published = getattr(entry, "published", "")
-        summary = getattr(entry, "summary", "")
-=======
-def get_score(title: str) -> int:
-    score = 1
-
-    if "初心者" in title:
-        score += 3
-    if "入門" in title:
-        score += 3
-    if "はじめて" in title:
-        score += 3
-    if "基礎" in title:
-        score += 2
-    if "使い方" in title:
-        score += 2
-    if "わかりやすく" in title:
-        score += 2
-
-    return score
-
-def add_article(source: str, title: str, link: str):
-    priority = get_priority(title)
-    score = get_score(title)
 
     notion.pages.create(
         parent={"database_id": DATABASE_ID},
@@ -360,43 +218,79 @@ def add_article(source: str, title: str, link: str):
                     }
                 ]
             },
+
             "Source": {
                 "select": {
                     "name": source
                 }
             },
+
             "Link": {
                 "url": link
             },
+
             "Status": {
                 "select": {
                     "name": "未読"
                 }
             },
+
             "Priority": {
                 "select": {
                     "name": priority
                 }
             },
+
             "Score": {
                 "number": score
+            },
+
+            "UniqueKey": {
+                "rich_text": [
+                    {
+                        "text": {
+                            "content": unique_key
+                        }
+                    }
+                ]
+            },
+
+            "Summary": {
+                "rich_text": [
+                    {
+                        "text": {
+                            "content": summary[:2000]
+                        }
+                    }
+                ]
+            },
+
+            "PublishedDate": {
+                "date": {
+                    "start": published
+                }
             }
         }
     )
+
     print(f"追加: {title}")
 
+
 for feed_info in feeds:
+    print(f"\n取得中: {feed_info['source']} / {feed_info['url']}")
     feed = feedparser.parse(feed_info["url"])
 
     for entry in feed.entries[:20]:
-        title = getattr(entry, "title", "")
-        link = getattr(entry, "link", "")
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
+
+        title = getattr(entry, "title", "").strip()
+        link = getattr(entry, "link", "").strip()
+
+        published = get_entry_date(entry)
+        summary = getattr(entry, "summary", "")
 
         if not title or not link:
             continue
 
-<<<<<<< HEAD
         print(f"確認中: {title}")
 
         if not is_target_article(title):
@@ -407,12 +301,7 @@ for feed_info in feeds:
         score = get_score(title)
 
         print(f"  -> 追加対象 (priority={priority}, score={score})")
-        add_article(feed_info["source"], title, link, published, summary)
-=======
-        if not is_beginner_ai_article(title):
-            continue
 
-        add_article(feed_info["source"], title, link)
->>>>>>> 79352706b67c0c1119e4c5fae7e64d4f9f0d6e59
+        add_article(feed_info["source"], title, link, published, summary)
 
 print("完了しました")
