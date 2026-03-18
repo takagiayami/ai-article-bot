@@ -53,6 +53,16 @@ beginner_keywords = [
     "始め方",
 ]
 
+web_keywords = [
+    "SPA",
+    "Vue",
+    "React",
+    "Nuxt",
+    "Next.js",
+    "フロントエンド",
+    "API設計",
+]
+
 exclude_keywords = [
     "論文",
     "ベンチマーク",
@@ -87,7 +97,10 @@ def is_target_article(title: str) -> bool:
     if contains_any_keyword(title, exclude_keywords):
         return False
 
-    if not contains_any_keyword(title, ai_keywords):
+    if not (
+        contains_any_keyword(title, ai_keywords)
+        or contains_any_keyword(title, web_keywords)
+    ):
         return False
 
     return True
