@@ -27,7 +27,10 @@ NOTION_API_BASE = "https://api.notion.com/v1"
 
 feeds = [
     {"source": "Zenn", "url": "https://zenn.dev/feed"},
-    {"source": "Qiita", "url": "https://qiita.com/tags/AI/feed"},
+    {"source": "Qiita-AI", "url": "https://qiita.com/tags/AI/feed"},
+    {"source": "Qiita-Vue", "url": "https://qiita.com/tags/Vue/feed"},
+    {"source": "Qiita-React", "url": "https://qiita.com/tags/React/feed"},
+    {"source": "Qiita-Frontend", "url": "https://qiita.com/tags/frontend/feed"},
 ]
 
 ai_keywords = [
@@ -112,10 +115,27 @@ def get_priority(title: str) -> str:
     if contains_any_keyword(title, beginner_keywords):
         return "High"
 
-    if "claude" in title_lower or "chatgpt" in title_lower or "gemini" in title_lower:
+    if (
+        "claude" in title_lower
+        or "chatgpt" in title_lower
+        or "gemini" in title_lower
+        or "vue" in title_lower
+        or "react" in title_lower
+        or "nuxt" in title_lower
+        or "next.js" in title_lower
+        or "spa" in title_lower
+    ):
         return "Medium"
 
-    if "生成ai" in title_lower or "プロンプト" in title_lower:
+    if (
+        "生成ai" in title_lower
+        or "プロンプト" in title
+        or "フロントエンド" in title
+        or "api設計" in title
+        or "api" in title_lower
+        or "javascript" in title_lower
+        or "typescript" in title_lower
+    ):
         return "Medium"
 
     return "Low"
@@ -151,8 +171,28 @@ def get_score(title: str) -> int:
     if "プロンプト" in title:
         score += 1
 
-    return score
+    if "vue" in title_lower:
+        score += 1
+    if "react" in title_lower:
+        score += 1
+    if "nuxt" in title_lower:
+        score += 1
+    if "next.js" in title_lower:
+        score += 1
+    if "spa" in title_lower:
+        score += 1
+    if "フロントエンド" in title:
+        score += 1
+    if "api設計" in title:
+        score += 1
+    if "api" in title_lower:
+        score += 1
+    if "javascript" in title_lower:
+        score += 1
+    if "typescript" in title_lower:
+        score += 1
 
+    return score
 
 def make_unique_key(source: str, title: str, link: str) -> str:
     raw = f"{source}::{title}::{link}"
